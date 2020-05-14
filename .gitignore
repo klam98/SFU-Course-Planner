@@ -18,8 +18,8 @@
 hs_err_pid*
 
 # local generated files
-.idea/
-out/
+/.idea
+/out
 /build
 
 # OSX files
