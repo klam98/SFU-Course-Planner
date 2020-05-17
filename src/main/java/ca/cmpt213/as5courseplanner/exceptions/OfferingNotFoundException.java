@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  */
 
 @ResponseStatus(value = HttpStatus.NOT_FOUND)
-public class CourseOfferingNotFoundException extends RuntimeException {
-    public CourseOfferingNotFoundException() { }
+public class OfferingNotFoundException extends RuntimeException {
+    public OfferingNotFoundException() { }
 
-    public CourseOfferingNotFoundException(String message) {
+    public OfferingNotFoundException(String message) {
         super(message);
     }
 }

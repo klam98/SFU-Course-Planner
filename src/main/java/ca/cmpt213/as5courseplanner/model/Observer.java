@@ -5,5 +5,5 @@ package ca.cmpt213.as5courseplanner.model;
  */
 
 public interface Observer {
-    void addUpdate(CourseOffering newOffering, Section newSection);
+    void addUpdate(Offering newOffering, Section section);
 }

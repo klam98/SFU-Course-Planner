@@ -7,5 +7,5 @@ package ca.cmpt213.as5courseplanner.model;
 public interface Subject {
     void addObserver(Observer observer);
     void deleteObserver(Observer observer);
-    void notifyObservers(CourseOffering newOffering, Section newSection);
+    void notifyObservers(Offering newOffering, Section newSection);
 }

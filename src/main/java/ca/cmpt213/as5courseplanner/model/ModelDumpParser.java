@@ -1,176 +1,171 @@
 package ca.cmpt213.as5courseplanner.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * ModelDumpParser class is responsible for parsing a CSV file and writing its data to /docs/output_dump.txt
+ * ModelDumpParser class is responsible for parsing a CSV file and writing its data to the terminal
  */
 
-public class ModelDumpParser implements Iterable<Department> {
+public class ModelDumpParser implements Iterable<Department>{
     private List<Department> departmentList = new ArrayList<>();
     private File file;
-    private AtomicLong courseId = new AtomicLong();
-    private AtomicLong courseOfferingId = new AtomicLong();
 
     private static final int SEMESTER_CODE_INDEX = 0;
-    private static final int SUBJECT_INDEX = 1;
-    private static final int CATALOG_NUMBER_INDEX = 2;
+    private static final int DEPARTMENT_INDEX = 1;
+    private static final int COURSE_NUMBER_INDEX = 2;
     private static final int LOCATION_INDEX = 3;
     private static final int ENROLLMENT_CAP_INDEX = 4;
     private static final int ENROLLMENT_TOTAL_INDEX = 5;
     private static final int INSTRUCTOR_INDEX = 6;
-//    private static final int COMPONENT_CODE_INDEX = 7;
+
+    private AtomicLong courseId = new AtomicLong();
+    private AtomicLong courseOfferingId = new AtomicLong();
 
     @Override
     public Iterator<Department> iterator() {
         return departmentList.iterator();
     }
 
-    public ModelDumpParser(File file) throws FileNotFoundException {
-        parseCSVFile(file);
+    public ModelDumpParser() throws FileNotFoundException{
+        this.parseFile();
     }
 
-    @JsonIgnore
+    public ModelDumpParser(File file) throws FileNotFoundException{
+        this.file = file;
+        this.parseFile();
+    }
+
     public Department getDepartment(long deptId) {
         for (Department eachDept : departmentList) {
-            if (eachDept.getDepartmentId() == deptId) {
+            if (eachDept.getDeptId() == deptId) {
                 return eachDept;
             }
         }
         return null;
     }
 
-    @JsonIgnore
     public List<Department> getDepartmentList() {
         return departmentList;
     }
 
-    public void setDepartmentList(List<Department> departmentList) {
-        this.departmentList = departmentList;
-    }
-
-    public AtomicLong getCourseId() {
-        return courseId;
-    }
-
-    public void setCourseId(AtomicLong courseId) {
-        this.courseId = courseId;
+    public long getCourseId() {
+        return courseId.get();
     }
 
     public long incrementAndGetCourseId() {
         return courseId.incrementAndGet();
     }
 
-    public AtomicLong getCourseOfferingId() {
-        return courseOfferingId;
+    public long getCourseOfferingId() {
+        return courseOfferingId.get();
     }
 
-    public void setCourseOfferingId(AtomicLong courseOfferingId) {
-        this.courseOfferingId = courseOfferingId;
-    }
-
-    public long incrementAndGetCourseOfferingId() {
+    public long incrementAndGetOfferingId() {
         return courseOfferingId.incrementAndGet();
     }
 
-    public void sortDepartmentList() {
-        Collections.sort(departmentList, (dept1, dept2) -> dept1.getName().compareTo(dept2.getName()));
+    public void setDepartmentList(List<Department> departmentList) {
+        this.departmentList = departmentList;
     }
 
-    public void addToDepartmentList(Department newDepartment, Course newCourse,
-                                    CourseOffering newCourseOffering, Section newSection) {
-        // if duplicate department; group them together via its course
-        for (Department eachDept : departmentList) {
-            if (eachDept.getName().equals(newDepartment.getName())) {
-                eachDept.addToCourseList(newCourse, newCourseOffering, newSection);
-                return;
-            }
-        }
-
-        // otherwise unique department; add it to departmentList
-        departmentList.add(newDepartment);
-        sortDepartmentList();
+    public File getFile() {
+        return file;
     }
 
-    public void parseCSVFile(File file) throws FileNotFoundException {
-        Scanner fileReader = null;
+    public void setFile(File file) {
+        this.file = file;
+    }
 
-        try {
-            fileReader = new Scanner(file); // can be changed here to try small_data.csv
 
+    public void parseFile() throws FileNotFoundException {
+
+        try (Scanner fileReader = new Scanner(file)) {
             // skip headers
             fileReader.nextLine();
 
-            // read in fields of the CSV file
+            // reads in the fields of the CSV File
             while (fileReader.hasNextLine()) {
-                // data structure to hold each string field that is split by the comma in the CSV file
                 String[] fields = fileReader.nextLine().split(",");
-                final int COMPONENT_CODE_INDEX = fields.length - 1; // should be 7
+                final int COMPONENT_INDEX = fields.length - 1;
 
-                // combining fields to feed them back into each class' constructors
                 List<String> courseOfferingFields = new ArrayList<>();
-                List<String> sectionFields = new ArrayList<>();
-
-                // each CourseOffering object is identified by these fields
                 courseOfferingFields.add(fields[LOCATION_INDEX]);
-
-                // catch i number of instructors; handles both cases of a single/many instructor(s)
-                for (int i = INSTRUCTOR_INDEX; i < COMPONENT_CODE_INDEX; i++) {
-                    courseOfferingFields.add(fields[i]);
-                }
+                courseOfferingFields.addAll(Arrays.asList(fields).subList(INSTRUCTOR_INDEX, COMPONENT_INDEX));
                 courseOfferingFields.add(fields[SEMESTER_CODE_INDEX]);
 
-                // each Section object is identified by these fields
-                sectionFields.add(fields[ENROLLMENT_CAP_INDEX]);
-                sectionFields.add(fields[ENROLLMENT_TOTAL_INDEX]);
-                sectionFields.add(fields[COMPONENT_CODE_INDEX]);
+                List<String> componentFields = new ArrayList<>();
+                componentFields.add(fields[ENROLLMENT_CAP_INDEX]);
+                componentFields.add(fields[ENROLLMENT_TOTAL_INDEX]);
+                componentFields.add(fields[fields.length - 1]);
 
-                Department department = new Department(fields[SUBJECT_INDEX]);
-                Course course = new Course(courseId.incrementAndGet(), fields[CATALOG_NUMBER_INDEX]);
-                CourseOffering courseOffering = new CourseOffering(courseOfferingId.incrementAndGet(),
-                                                                   courseOfferingFields);
-                Section section = new Section(sectionFields);
+                Department department = new Department(fields[DEPARTMENT_INDEX]);
+                Course course = new Course(fields[COURSE_NUMBER_INDEX], courseId.incrementAndGet());
+                Offering offering = new Offering(courseOfferingFields, courseOfferingId.incrementAndGet());
+                Section section = new Section(componentFields);
 
-                // sorting done recursively through each class
-                addToDepartmentList(department, course, courseOffering, section);
+                addToDepartmentList(department, course, offering, section);
             }
+
+            fileReader.close();
+            sortEverything();
         }
         catch (FileNotFoundException e) {
             e.printStackTrace();
-            exitProgram("File was not found!");
+            exitProgram();
         }
-        finally {
-            if (fileReader != null) {
-                fileReader.close();
+    }
+
+
+    public void sortEverything() {
+        Collections.sort(departmentList);
+
+        for (Department eachDept : departmentList) {
+            Collections.sort(eachDept.getCourseList());
+
+            for (Course eachCourse : eachDept) {
+                Collections.sort(eachCourse.getOfferingList());
+
+                for (Offering eachOffering : eachCourse) {
+                    Collections.sort(eachOffering.getSectionList());
+                }
             }
         }
     }
 
+    public void addToDepartmentList(Department newDepartment, Course newCourse,
+                                    Offering newOffering, Section newSection) {
+        //Check for duplicate departments; if there is, let Course check for duplicates
+        for(Department department: departmentList) {
+            if(newDepartment.getName().equals(department.getName())) {
+                department.addToCourseList(newCourse, newOffering, newSection);
+                return;
+            }
+        }
+        //If not duplicate, add to departments list
+        newDepartment.setDeptId(departmentList.size());
+        departmentList.add(newDepartment);
+    }
+
+    // print all the courses in the list to the terminal
     public String modelDump() {
         StringBuilder printCourses = new StringBuilder();
 
-        // iterating through each list
         for (Department eachDept : departmentList) {
-
             for (Course eachCourse : eachDept) {
-                printCourses.append(eachDept.getName()).append(" ")
-                        .append(eachCourse.getCatalogNumber()).append("\n");
+                printCourses.append(eachDept.getName() + " " + eachCourse.getCatalogNumber() + "\n");
 
-                for (CourseOffering eachOffering : eachCourse) {
-                    printCourses.append("\t").append(eachOffering.getSemesterCode()).append(" in ")
-                            .append(eachOffering.getLocation()).append(" by ")
-                            .append(eachOffering.getInstructors()).append("\n");
+                for (Offering eachOffering : eachCourse) {
+                    printCourses.append("\t" + eachOffering.getSemesterCode() + " in "
+                            + eachOffering.getLocation() + " by "
+                            + eachOffering.getInstructors() + "\n");
 
                     for (Section eachSection : eachOffering) {
-                        printCourses.append("\t\t" + "Type=").append(eachSection.getType())
-                                .append(", Enrollment=")
-                                .append(eachSection.getEnrollmentTotal()).append("/")
-                                .append(eachSection.getEnrollmentCapacity()).append("\n");
+                        printCourses.append("\t\t" + "Type=" + eachSection.getType() + ", Enrollment="
+                                + eachSection.getEnrollmentTotal() + "/"
+                                + eachSection.getEnrollmentCap() + "\n");
                     }
                 }
             }
@@ -180,9 +175,9 @@ public class ModelDumpParser implements Iterable<Department> {
     }
 
     // only ModelDumpParser class should be able to call this method
-    private void exitProgram(String errorMessage) {
+    private void exitProgram() {
         final int FAILURE = -1;
-        System.out.println(errorMessage);
+        System.out.println("File was not found!");
         System.out.println("Program will now exit.");
         System.exit(FAILURE);
     }

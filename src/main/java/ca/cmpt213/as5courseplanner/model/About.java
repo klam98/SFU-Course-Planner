@@ -8,9 +8,9 @@ public class About {
     private String appName;
     private String authorName;
 
-    public About(String appName, String authorName) {
-        this.appName = appName;
-        this.authorName = authorName;
+    public About() {
+        appName = "CMPT 213 REST API Course Planner";
+        authorName = "Kenrick Lam";
     }
 
     public String getAppName() {

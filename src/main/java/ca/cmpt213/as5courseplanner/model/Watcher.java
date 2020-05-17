@@ -1,28 +1,33 @@
 package ca.cmpt213.as5courseplanner.model;
 
-import ca.cmpt213.as5courseplanner.exceptions.CourseOfferingNotFoundException;
+import ca.cmpt213.as5courseplanner.exceptions.OfferingNotFoundException;
 import ca.cmpt213.as5courseplanner.exceptions.DepartmentNotFoundException;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class Watcher implements Observer {
+/**
+ * Watcher class implements observer and is our observer. It watches over courses and upon being
+ * notified by the Course observable adds tracks the offering and component added to the list.
+ */
+
+public class Watcher implements Observer{
     private long watcherId;
     private Department department;
 
     // Course object if observable
     private Course course;
-    private List<String> events = new ArrayList<>();
+    private List<String> eventList = new ArrayList<>();
 
     @Override
-    public void addUpdate(CourseOffering newOffering, Section newSection) {
+    public void addUpdate(Offering newOffering, Section newSection) {
         // necessary components that observers inquire info about from courses
         Date date = new Date();
         String currentDate = date.toString();
         String type = newSection.getType();
         String enrollmentTotal = String.valueOf(newSection.getEnrollmentTotal());
-        String enrollmentCapacity = String.valueOf(newSection.getEnrollmentCapacity());
+        String enrollmentCapacity = String.valueOf(newSection.getEnrollmentCap());
         String term = newOffering.getTerm();
         String year = String.valueOf(newOffering.getYear());
 
@@ -32,20 +37,20 @@ public class Watcher implements Observer {
                 + "to offering " + term + " " + year + ".";
 
         // add eventMessage to a queue of updates for observers
-        events.add(eventMessage);
+        eventList.add(eventMessage);
     }
 
     // default constructor for empty watcher
     public Watcher() { }
 
     public Watcher(long watcherId, long deptId, long courseId, ModelDumpParser parser)
-                   throws DepartmentNotFoundException, CourseOfferingNotFoundException
+            throws DepartmentNotFoundException, OfferingNotFoundException
     {
         this.watcherId = watcherId;
 
         // instantiate a department for the watcher if a deptId matches a department found in the list
         for (Department eachDept : parser.getDepartmentList()) {
-            if (eachDept.getDepartmentId() == deptId) {
+            if (eachDept.getDeptId() == deptId) {
                 this.department = eachDept;
             }
         }
@@ -62,7 +67,7 @@ public class Watcher implements Observer {
         }
 
         if (this.course == null) {
-            throw new CourseOfferingNotFoundException();
+            throw new OfferingNotFoundException();
         }
     }
 
@@ -79,6 +84,6 @@ public class Watcher implements Observer {
     }
 
     public List<String> getEvents() {
-        return events;
+        return eventList;
     }
 }

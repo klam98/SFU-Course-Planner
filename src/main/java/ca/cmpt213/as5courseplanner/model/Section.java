@@ -2,32 +2,47 @@ package ca.cmpt213.as5courseplanner.model;
 
 import java.util.List;
 
+import static java.lang.Integer.parseInt;
+
 /**
  *  Section class represents the each course's section
  *  Section class allows all offerings of a course to be grouped together
  */
 
-public class Section {
-    private int enrollmentCapacity;
+public class Section implements Comparable<Section>{
+    private int enrollmentCap;
     private int enrollmentTotal;
-    private String type;
+    private String component;
 
-    public Section(List<String> fieldList) {
-        enrollmentCapacity = Integer.parseInt(fieldList.get(0));
-        enrollmentTotal = Integer.parseInt(fieldList.get(1));
-        type = fieldList.get(2).trim();
+    @Override
+    public int compareTo(Section other) {
+        return component.compareTo(other.component);
     }
 
-    public int getEnrollmentCapacity() {
-        return enrollmentCapacity;
+    public Section(List<String> fields) {
+        enrollmentCap = parseInt(fields.get(0));
+        enrollmentTotal = parseInt(fields.get(1));
+        component = fields.get(2).trim();
     }
 
-    public void setEnrollmentCapacity(int enrollmentCapacity) {
-        this.enrollmentCapacity = enrollmentCapacity;
+    public String getType() {
+        return component;
     }
 
-    public void combineEnrollmentCapacity(int otherEnrollmentCapacity) {
-        this.enrollmentCapacity += otherEnrollmentCapacity;
+    public void setType(String component) {
+        this.component = component;
+    }
+
+    public int getEnrollmentCap() {
+        return enrollmentCap;
+    }
+
+    public void setEnrollmentCap(int enrollmentCap) {
+        this.enrollmentCap = enrollmentCap;
+    }
+
+    public void addEnrollmentCap(int aggregateCap) {
+        enrollmentCap += aggregateCap;
     }
 
     public int getEnrollmentTotal() {
@@ -38,15 +53,7 @@ public class Section {
         this.enrollmentTotal = enrollmentTotal;
     }
 
-    public void combineEnrollmentTotal(int otherEnrollmentTotal) {
-        this.enrollmentTotal += otherEnrollmentTotal;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
+    public void addEnrollmentTotal(int aggregateTotal) {
+        enrollmentTotal += aggregateTotal;
     }
 }

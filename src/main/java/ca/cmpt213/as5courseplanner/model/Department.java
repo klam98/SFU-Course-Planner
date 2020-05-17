@@ -11,24 +11,33 @@ import java.util.List;
  * Department class represents all the courses a department teaches
  */
 
-public class Department implements Iterable<Course> {
+public class Department implements Comparable<Department>, Iterable<Course>{
     private long deptId;
     private String name;
     private List<Course> courseList = new ArrayList<>();
-    private List<Integer> semesterCodesList = new ArrayList<>();
+
+    @Override
+    public int compareTo(Department other) {
+        return name.compareTo(other.name);
+    }
 
     @Override
     public Iterator<Course> iterator() {
         return courseList.iterator();
     }
 
+    public Department() { }
     public Department(String name) {
-        this.name = name;
+        this.name = name.trim();
     }
 
     @JsonIgnore
+    public List<Course> getCourseList() {
+        return courseList;
+    }
+
     public Course getCourse(long courseId) {
-        for (Course eachCourse : courseList) {
+        for (Course eachCourse: courseList) {
             if (eachCourse.getCourseId() == courseId) {
                 return eachCourse;
             }
@@ -36,11 +45,15 @@ public class Department implements Iterable<Course> {
         return null;
     }
 
-    public long getDepartmentId() {
+    public void setCourseList(List<Course> courseList) {
+        this.courseList = courseList;
+    }
+
+    public long getDeptId() {
         return deptId;
     }
 
-    public void setDepartmentId(long deptId) {
+    public void setDeptId(long deptId) {
         this.deptId = deptId;
     }
 
@@ -52,54 +65,43 @@ public class Department implements Iterable<Course> {
         this.name = name;
     }
 
-    @JsonIgnore
-    public List<Course> getCourseList() {
-        return courseList;
-    }
-
-    public void setCourseList(List<Course> courseList) {
-        this.courseList = courseList;
-    }
-
-    @JsonIgnore
-    public void sortCourseList() {
-        Collections.sort(courseList, (course1, course2) ->
-                course1.getCatalogNumber().compareTo(course2.getCatalogNumber()));
-    }
-
-    public void addToCourseList(Course newCourse, CourseOffering newOffering, Section newSection) {
-        // if duplicate course; group them together via its course offering
-        for (Course eachCourse : courseList) {
+    public void addToCourseList(Course newCourse, Offering newOffering, Section newSection) {
+        // check for duplicate course; if there is, let Offering check for duplicates
+        for (Course eachCourse: courseList) {
             if (eachCourse.getCatalogNumber().equals(newCourse.getCatalogNumber())) {
-                eachCourse.addCourseOfferingToList(newOffering, newSection);
+                eachCourse.addToOfferingList(newOffering, newSection);
                 return;
             }
         }
-
-        // populate semesterCodesList each time a new courseOffering is added
-        semesterCodesList.add(newOffering.getSemesterCode());
-
-        // otherwise unique course offering; add it to courseOfferingList
+        // if not duplicate, add to course list
+        newCourse.addToOfferingList(newOffering, newSection);
         courseList.add(newCourse);
-        sortCourseList();
     }
 
-    public List<GraphData> getDepartmentStats() {
-        List<GraphData> dataPoints = new ArrayList<>();
+    public int getFirstSemesterCode() {
+        int firstSemester = 0;
+        for (Course eachCourse: courseList) {
+            int semesterCode = eachCourse.getOfferingList().get(0).getSemesterCode();
 
-        for (Integer eachSemesterCode : semesterCodesList) {
-            int enrollmentTotal = 0;
-
-            for (Course eachCourse : courseList) {
-                enrollmentTotal += eachCourse.getNumEnrolledBySemester(eachSemesterCode);
+            if (semesterCode < firstSemester || firstSemester == 0) {
+                firstSemester = semesterCode;
             }
-
-            GraphData newPoint = new GraphData(enrollmentTotal, eachSemesterCode);
-            dataPoints.add(newPoint);
         }
 
-        Collections.sort(dataPoints, (point1, point2) -> point1.getSemesterCode() - point2.getSemesterCode());
+        return firstSemester;
+    }
 
-        return dataPoints;
+    public int getLastSemesterCode() {
+        int lastSemester = 0;
+        for (Course eachCourse: courseList) {
+            int semesterCode = eachCourse.getOfferingList().get(eachCourse.getOfferingList().size() - 1)
+                                         .getSemesterCode();
+
+            if (semesterCode > lastSemester) {
+                lastSemester = semesterCode;
+            }
+        }
+
+        return lastSemester;
     }
 }

@@ -11,24 +11,48 @@ import java.util.List;
  * Course class represents each unique course and its entire list of offerings
  */
 
-public class Course implements Iterable<CourseOffering> {
+public class Course implements Comparable<Course>, Iterable<Offering>, Subject {
     private long courseId;
     private String catalogNumber;
-    private List<CourseOffering> courseOfferingList = new ArrayList<>();
+    private List<Offering> offeringList = new ArrayList<>();
+    private List<Observer> observerList = new ArrayList<>();
 
     @Override
-    public Iterator<CourseOffering> iterator() {
-        return courseOfferingList.iterator();
+    public void addObserver(Observer observer) {
+        observerList.add(observer);
     }
 
-    public Course(long courseId, String catalogNumber) {
-        this.courseId = courseId;
+    @Override
+    public void deleteObserver(Observer observer) {
+        observerList.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers(Offering newOffering, Section newSection) {
+        for (Observer eachObserver : observerList) {
+            eachObserver.addUpdate(newOffering, newSection);
+        }
+    }
+
+    @Override
+    public int compareTo(Course otherCourse) {
+        return catalogNumber.compareTo(otherCourse.catalogNumber);
+    }
+
+    @Override
+    public Iterator<Offering> iterator() {
+        return offeringList.iterator();
+    }
+
+    public Course() { }
+
+    public Course(String catalogNumber, long courseId) {
         this.catalogNumber = catalogNumber.trim();
+        this.courseId = courseId;
     }
 
-    @JsonIgnore
-    public CourseOffering getCourseOffering(long courseOfferingId) {
-        for (CourseOffering eachOffering : courseOfferingList) {
+    public Offering getOffering(long courseOfferingId) {
+        for (Offering eachOffering : offeringList) {
             if (eachOffering.getCourseOfferingId() == courseOfferingId) {
                 return eachOffering;
             }
@@ -53,50 +77,32 @@ public class Course implements Iterable<CourseOffering> {
     }
 
     @JsonIgnore
-    public List<CourseOffering> getCourseOfferingList() {
-        return courseOfferingList;
+    public List<Offering> getOfferingList() {
+        return offeringList;
     }
 
-    public void setCourseOfferingList(List<CourseOffering> courseOfferingList) {
-        this.courseOfferingList = courseOfferingList;
+    public void setOfferingList(List<Offering> offeringList) {
+        this.offeringList = offeringList;
     }
 
-    @JsonIgnore
-    public void sortCourseOfferingList() {
-        Collections.sort(courseOfferingList, (offering1, offering2) ->
-                offering1.getSemesterCode() - offering2.getSemesterCode());
-    }
-
-    public void addCourseOfferingToList(CourseOffering newCourseOffering, Section newSection) {
-        // if duplicate course offering; group them together via its section
-        for (CourseOffering eachOffering : courseOfferingList) {
-            if (eachOffering.getSemesterCode() == newCourseOffering.getSemesterCode()
-                    && eachOffering.getLocation().equals(newCourseOffering.getLocation())) {
-                if (!eachOffering.getInstructorList().equals(newCourseOffering.getInstructorList())) {
-                    eachOffering.addInstructorToList(newCourseOffering.getInstructorList());
+    public void addToOfferingList(Offering newOffering, Section newSection) {
+        // check for duplicate course; if there is, let Offering check for duplicates
+        for (Offering eachOffering : offeringList) {
+            if (eachOffering.getLocation().equals(newOffering.getLocation())
+                    && eachOffering.getSemesterCode() == newOffering.getSemesterCode()) {
+                // check to see if only instructors were missing; if so, add missing instructors to list of instructors
+                if (!eachOffering.getInstructorList().equals(newOffering.getInstructorList())) {
+                    eachOffering.addInstructorToList(newOffering.getInstructorList());
                     return;
-                }
-                else {
+                } else {
                     eachOffering.addSectionToList((newSection));
                     return;
                 }
             }
         }
 
-        // otherwise unique course offering; add it to courseOfferingList
-        courseOfferingList.add(newCourseOffering);
-        sortCourseOfferingList();
-    }
-
-    public int getNumEnrolledBySemester(int semesterCode) {
-        int enrollmentTotal = 0;
-
-        for (CourseOffering eachOffering : courseOfferingList) {
-            if (eachOffering.getSemesterCode() == semesterCode) {
-                enrollmentTotal += eachOffering.getNumEnrolledToLecture();
-            }
-        }
-
-        return enrollmentTotal;
+        // if not duplicate, add to course list
+        newOffering.addSectionToList(newSection);
+        offeringList.add(newOffering);
     }
 }
